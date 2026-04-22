@@ -1,41 +1,37 @@
-# Autosave files
-*.asv
-*.m~
-*.autosave
-*.slx.r*
-*.slx.original
-*.mdl.r*
+# ========================
+# CMAKE / BUILD ARTIFACTS
+# ========================
+build/
+*/build/
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+*.obj
+*.dll
+*.lib
+*.exe
+*.ilk
+*.pdb
 
-# Derived content-obscured files
-*.p
-
-# Compiled MEX files
-*.mex*
-
-# Packaged app and toolbox files
-*.mlappinstall
-*.mltbx
-
-# Deployable archives
-*.ctf
-
-# Generated helpsearch folders
-helpsearch*/
-
-# Code generation folders
+# ========================
+# MATLAB / SIMULINK
+# ========================
 slprj/
-sccprj/
-codegen/
+*_m.m
+*_grt.c
+*_rtw/
+html/
+*.autosave
+*.log
+*.bak
 
-# Cache files
-*.slxc
-
-# Cloud based storage dotfile
-.MATLABDriveTag
-
-# buildtool cache folder
-.buildtool/
-
-# SimBiology backup files
-*.sbproj.backup
-*.sbproj.bak
+# ========================
+# IDE & OS
+# ========================
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
