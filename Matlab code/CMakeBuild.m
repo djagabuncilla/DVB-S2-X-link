@@ -7,11 +7,12 @@ function CMakeBuild()
     cpp_path = fullfile(prj_root, 'cpp');
     build_path = fullfile(cpp_path, 'build');
     
+    
     % Создаём папку build, если нет
     if ~exist(build_path, 'dir')
         mkdir(build_path);
     end
-    
+    addpath("cpp\build");
     % CMake configure: -S исходники, -B сборка
     fprintf('🔧 Configuring CMake...\n');
     cmake_configure = sprintf('cmake -S "%s" -B "%s" -G "MinGW Makefiles"', ...

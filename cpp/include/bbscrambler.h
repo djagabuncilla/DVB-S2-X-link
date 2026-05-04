@@ -16,7 +16,7 @@ extern "C" {
     #define DVBS2_API
 #endif
 
-DVBS2_API void bbscrambler(const bool* u0, bool* y0);
+DVBS2_API void bbscrambler(int Kbch, const bool* u0, bool* y0);
 
 #ifdef __cplusplus
 }

@@ -21,14 +21,13 @@ static inline void step_y(uint32_t *reg)
     *reg = (*reg >> 1) | (fb << 17);
 }
 
-extern "C" EXPORT void pldescrambler(const double *u_re, const double *u_im, double *y_re, double *y_im)
+extern "C" EXPORT void pldescrambler(int frame_size_without_PLS, const double *u_re, const double *u_im, double *y_re, double *y_im)
 {
-    static uint32_t reg_x, reg_y;
-    static uint32_t reg_x_shift, reg_y_shift;
-    const int FRAME_SIZE = 8280;
+    uint32_t reg_x, reg_y;
+    uint32_t reg_x_shift, reg_y_shift;
 
     reg_x = 1;
-    reg_y = 0x1FFFF;
+    reg_y = 0x3FFFF;
     reg_x_shift = reg_x;
     reg_y_shift = reg_y;
 
@@ -37,7 +36,7 @@ extern "C" EXPORT void pldescrambler(const double *u_re, const double *u_im, dou
         step_y(&reg_y_shift);
     }
 
-    for (int i = 0; i < FRAME_SIZE; i++) {
+    for (int i = 0; i < frame_size_without_PLS; i++) {
         uint8_t x  = reg_x & 1;
         uint8_t y  = reg_y & 1;
         uint8_t x_s = reg_x_shift & 1;

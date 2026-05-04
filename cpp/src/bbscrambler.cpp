@@ -1,4 +1,5 @@
 #include "bbscrambler.h"
+#include <stdint.h>
 
 #ifdef _WIN32
     #define EXPORT __declspec(dllexport)
@@ -6,26 +7,20 @@
     #define EXPORT
 #endif
 
-extern "C" EXPORT void bbscrambler(const bool* u0, bool* y0)
+extern "C" EXPORT void bbscrambler(int Kbch, const bool* u0, bool* y0)
 {
-    uint16_t prbs_register = 0x4A40;
-    int frame_size = 6312;
-    for (int i = 0; i < frame_size; i++) {
+    uint16_t prbs_register = 0x4A80;   // reset на каждый BBFRAME
 
-        int bit14 = (prbs_register >> 13) & 1;
-        int bit15 = (prbs_register >> 14) & 1;
-        int feedback = bit14 ^ bit15;
+    for (int i = 0; i < Kbch; i++)
+    {
+        int prbs = (prbs_register ^ (prbs_register >> 1)) & 1;
 
-        int prbs_output = prbs_register & 1;
-
-        int input_bit = u0[i] ? 1 : 0;
-        int scrambled_bit = input_bit ^ prbs_output;
-
-        y0[i] = scrambled_bit;
+        y0[i] = u0[i] ^ prbs;
 
         prbs_register >>= 1;
-        if (feedback) {
-            prbs_register |= (1 << 14);
+        if (prbs)
+        {
+            prbs_register |= 0x4000;
         }
     }
 }
