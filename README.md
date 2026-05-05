@@ -11,7 +11,8 @@
 │   └── dvbs2link.slx
 │
 ├── Matlab code/
-│   └── CMakeBuild.m
+│   ├── CMakeBuild.m
+│   └── dvbs2_test.m
 │
 ├── Matlab Blocks/
 │   ├── PLS_Codec.m
@@ -23,10 +24,11 @@
 ├── MAT files/
 │   ├── SOF.mat
 │   ├── LDPC_2_5.mat
-│   └── dvbs2LDPCParityMatrix...
+│   └── dvbs2xLDPCParityMatrices.mat
 │
 ├── cpp/
 │   ├── CMakeLists.txt
+│   │
 │   ├── src/
 │   │   ├── plscrambler.cpp
 │   │   ├── pldescrambler.cpp
@@ -34,12 +36,16 @@
 │   │   ├── phasecorrection.cpp
 │   │   └── bbscrambler.cpp
 │   │
-│   └── include/
-│       ├── plscrambler.h
-│       ├── pldescrambler.h
-│       ├── pilot_insertion.h
-│       ├── phasecorrection.h
-│       └── bbscrambler.h
+│   ├── include/
+│   │   ├── plscrambler.h
+│   │   ├── pldescrambler.h
+│   │   ├── pilot_insertion.h
+│   │   ├── phasecorrection.h
+│   │   └── bbscrambler.h
+│   │
+│   └── test/
+│       ├── CMakeLists.txt
+│       └── test.cpp
 │
 └── .git/
 ```
@@ -117,6 +123,10 @@ gen = dvbs2WaveformGenerator( ...
 
 Функция для сборки всех ```cpp``` и ```h``` в ```dvbs2.dll```. Требуется ```CMake``` и ```MinGW64``` в
 ```PATH```. Билд создаётся в папке ```cpp/build```. 
+
+#### dvbs2_test.m
+
+Собирает тест в папке ```/cpp/test``` и выводит отсчёты для ```bbscrambler``` и ```plscrambler```, проверяя скремблеры на инволюцию.
 
 ## C++ Blocks
 Находятся в папке ```/cpp```. Для ```cpp``` - ```/cpp/src```, для ```h``` - ```/cpp/include```.

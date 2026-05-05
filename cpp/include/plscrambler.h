@@ -3,7 +3,7 @@
 extern "C" {
 #endif
 
-void plscrambler(const double *u_re, const double *u_im, double *y_re, double *y_im);
+void plscrambler(int frame_size_without_PLS, const double *u_re, const double *u_im, double *y_re, double *y_im);
 
 #ifdef __cplusplus
 }
