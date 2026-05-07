@@ -1,12 +1,16 @@
 # ========================
 # CMAKE / BUILD ARTIFACTS
 # ========================
-build/
-*/build/
+# Папки сборки на любой глубине
+**/build/
+**/CMakeFiles/
+
+# Файлы конфигурации и сборки
 CMakeCache.txt
-CMakeFiles/
 cmake_install.cmake
 Makefile
+
+# Бинарники и отладочные файлы
 *.obj
 *.dll
 *.lib
@@ -15,16 +19,23 @@ Makefile
 *.pdb
 
 # ========================
+# TEMP & INTERMEDIATE
+# ========================
+# Временные папки (игнорируются на любом уровне вложенности)
+**/TEMP/
+
+# ========================
 # MATLAB / SIMULINK
 # ========================
-slprj/
+**/slprj/
 *_m.m
 *_grt.c
-*_rtw/
-html/
+**/*_rtw/
+**/html/
 *.autosave
 *.log
 *.bak
+*.asv
 
 # ========================
 # IDE & OS
