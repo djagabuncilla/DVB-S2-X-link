@@ -14,6 +14,7 @@ add_library(dvbs2 SHARED
     src/plscrambler.cpp
     src/pldescrambler.cpp
     src/phasecorrection.cpp
+    src/pldescrambler_x.cpp
 )
 
 #Критично для Windows/MinGW: убираем префикс "lib", чтобы на выходе был dvbs2.dll

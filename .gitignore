@@ -17,6 +17,7 @@ Makefile
 *.exe
 *.ilk
 *.pdb
+*.original
 
 # ========================
 # TEMP & INTERMEDIATE
