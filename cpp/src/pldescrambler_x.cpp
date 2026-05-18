@@ -7,207 +7,97 @@
 #define EXPORT
 #endif
 
-// ============================================================
-// DVB-S2X Physical Layer DESCRAMBLER
-//
-// Реализация соответствует MATLAB:
-//
-//   seq = 2*z2 + z1
-//
-// где:
-//
-//   z1 = x1 ^ y1
-//   z2 = x2 ^ y2
-//
-// x2/y2 сдвинуты на 131072
-//
-// ------------------------------------------------------------
-// IMPORTANT:
-//
-// Это DESCRAMBLER
-// => используется conjugate rotation
-//
-// ------------------------------------------------------------
-// Input:
-//
-//   весь PLFRAME целиком
-//
-// ------------------------------------------------------------
-// Особенности:
-//
-//   - первые 90 symbols (PLHEADER) НЕ descramble
-//   - VL-SNR header 900 symbols НЕ descramble
-//   - scrambling sequence при этом продолжает идти
-//
-// ============================================================
-
-static inline void step_x(uint32_t* reg)
+static inline void step_x(uint32_t *reg)
 {
-    uint8_t b0 = (*reg) & 1;
-    uint8_t b7 = ((*reg) >> 7) & 1;
-
-    uint8_t fb = b0 ^ b7;
-
-    *reg = (*reg >> 1) | ((uint32_t)fb << 17);
+    uint8_t x = (*reg) & 1;
+    uint8_t fb = x ^ ((*reg >> 7) & 1);
+    *reg = (*reg >> 1) | (fb << 17);
 }
 
-static inline void step_y(uint32_t* reg)
+static inline void step_y(uint32_t *reg)
 {
-    uint8_t b0  = (*reg) & 1;
-    uint8_t b5  = ((*reg) >> 5) & 1;
-    uint8_t b7  = ((*reg) >> 7) & 1;
-    uint8_t b10 = ((*reg) >> 10) & 1;
-
-    uint8_t fb = b0 ^ b5 ^ b7 ^ b10;
-
-    *reg = (*reg >> 1) | ((uint32_t)fb << 17);
+    uint8_t y = (*reg) & 1;
+    uint8_t fb = y ^ ((*reg >> 5) & 1) ^ ((*reg >> 7) & 1) ^ ((*reg >> 10) & 1);
+    *reg = (*reg >> 1) | (fb << 17);
 }
 
 extern "C" EXPORT void pldescrambler_x(
     int frame_size,
-    const double* u_re,
-    const double* u_im,
-    double* y_re,
-    double* y_im)
+    int VL_SNR,
+    int PLScrambler_seq,
+    const double *u_re,
+    const double *u_im,
+    double *y_re,
+    double *y_im)
 {
-    // ========================================================
-    // Main Gold sequence
-    // ========================================================
+    uint32_t reg_x, reg_y;
+    uint32_t reg_x_shift, reg_y_shift;
 
-    uint32_t reg_x1 = 0x00001;
-    uint32_t reg_y1 = 0x3FFFF;
+    // Gold code index:
+    // n = PLScrambler_seq * 10949
+    uint32_t n = (uint32_t)(PLScrambler_seq * 10949);
 
-    // ========================================================
-    // Shifted Gold sequence (+131072)
-    // ========================================================
+    // Initial conditions
+    reg_x = 1;
+    reg_y = 0x3FFFF;
 
-    uint32_t reg_x2 = reg_x1;
-    uint32_t reg_y2 = reg_y1;
+    reg_x_shift = reg_x;
+    reg_y_shift = reg_y;
 
-    for (int i = 0; i < 131072; i++)
-    {
-        step_x(&reg_x2);
-        step_y(&reg_y2);
+    // --------------------------------------------------------
+    // IMPORTANT FIX:
+    // n is applied only to x-sequence
+    // y-sequence is NOT shifted by n
+    // --------------------------------------------------------
+
+    for (uint32_t i = 0; i < n; i++) {
+        step_x(&reg_x);
     }
 
-    // ========================================================
-    // Constants
-    // ========================================================
+    for (uint32_t i = 0; i < n + 131072; i++) {
+        step_x(&reg_x_shift);
+    }
 
-    const int PLHEADER_SIZE = 90;
+    for (uint32_t i = 0; i < 131072; i++) {
+        step_y(&reg_y_shift);
+    }
 
-    // VL-SNR header:
-    // immediately after PLHEADER
-    const int VLSNR_HEADER_START = 90;
-    const int VLSNR_HEADER_SIZE  = 900;
-    const int VLSNR_HEADER_END =
-        VLSNR_HEADER_START + VLSNR_HEADER_SIZE;
+    // For ordinary DVB-S2/S2X:
+    // scrambling starts after 90 symbols
+    // For VL-SNR:
+    // scrambling is not applied during the 900-symbol header,
+    // but the sequence must still be advanced there
+    int scrambling_start = (VL_SNR ? 990 : 90);
 
-    // ========================================================
-    // Entire PLFRAME
-    // ========================================================
+    for (int i = 0; i < scrambling_start; i++) {
+        y_re[i] = u_re[i];
+        y_im[i] = u_im[i];
+    }
 
-    for (int i = 0; i < frame_size; i++)
-    {
-        // ----------------------------------------------------
-        // Generate scrambling integer:
-        //
-        // R = 2*z2 + z1
-        // ----------------------------------------------------
+    for (int i = scrambling_start; i < frame_size; i++) {
 
-        uint8_t z1 =
-            ((reg_x1 & 1) ^ (reg_y1 & 1));
+        uint8_t x  = reg_x & 1;
+        uint8_t y  = reg_y & 1;
+        uint8_t x_s = reg_x_shift & 1;
+        uint8_t y_s = reg_y_shift & 1;
 
-        uint8_t z2 =
-            ((reg_x2 & 1) ^ (reg_y2 & 1));
-
-        uint8_t R = (z2 << 1) | z1;
-
-        // ----------------------------------------------------
-        // Advance BOTH sequences
-        // ----------------------------------------------------
-
-        step_x(&reg_x1);
-        step_y(&reg_y1);
-
-        step_x(&reg_x2);
-        step_y(&reg_y2);
-
-        // ----------------------------------------------------
-        // Input symbol
-        // ----------------------------------------------------
+        uint8_t z0 = x ^ y;
+        uint8_t z1 = x_s ^ y_s;
+        uint8_t R = 2*z1 + z0;
 
         double I = u_re[i];
         double Q = u_im[i];
 
-        // ----------------------------------------------------
-        // Regions WITHOUT scrambling
-        //
-        // IMPORTANT:
-        // sequence still advances
-        // ----------------------------------------------------
-
-        bool apply_descrambling = true;
-
-        // PLHEADER
-        if (i < PLHEADER_SIZE)
-            apply_descrambling = false;
-
-        // VL-SNR header
-        if (i >= VLSNR_HEADER_START &&
-            i <  VLSNR_HEADER_END)
-        {
-            apply_descrambling = false;
+        switch (R) {
+            case 0: y_re[i] =  I; y_im[i] =  Q; break;
+            case 1: y_re[i] =  Q; y_im[i] = -I; break;
+            case 2: y_re[i] = -I; y_im[i] = -Q; break;
+            case 3: y_re[i] = -Q; y_im[i] =  I; break;
         }
 
-        // ----------------------------------------------------
-        // No descrambling
-        // ----------------------------------------------------
-
-        if (!apply_descrambling)
-        {
-            y_re[i] = I;
-            y_im[i] = Q;
-            continue;
-        }
-
-        // ----------------------------------------------------
-        // DVB-S2/S2X DESCRAMBLER
-        //
-        // conjugate rotation
-        //
-        // exp(-j*pi/2 * R)
-        // ----------------------------------------------------
-
-        switch (R)
-        {
-            case 0:
-
-                y_re[i] =  I;
-                y_im[i] =  Q;
-
-                break;
-
-            case 1:
-
-                y_re[i] =  Q;
-                y_im[i] = -I;
-
-                break;
-
-            case 2:
-
-                y_re[i] = -I;
-                y_im[i] = -Q;
-
-                break;
-
-            case 3:
-
-                y_re[i] = -Q;
-                y_im[i] =  I;
-
-                break;
-        }
+        step_x(&reg_x);
+        step_y(&reg_y);
+        step_x(&reg_x_shift);
+        step_y(&reg_y_shift);
     }
 }
